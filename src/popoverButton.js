@@ -6,39 +6,107 @@
  * note: <br>
  * 1. Please set the extra parameters for the callback on $el.data('parameter')<br>
  * 2. callback argument: callback($buttonValue, $extraData);<br>
- * 3. Callback use case is defined in the parameter: options['callbackOn']<br>
+ * 3. Callback use case is defined in the parameter: options.callbackOn <br>
  * 4. Namespace support: $.marshung, namespace, app<br>
  * ex: <br>
- * a. $.marshung.popoverButton(), <br>
- * b. namespace.popoverButton(), <br>
- * c. app.popoverButton() <br>
- * 
- * @example <br>
- *          app.popoverButton.init('div.factor-block div.btn.rule');
+ * a. $.marshung.popoverButton(els, options), <br>
+ * b. namespace.popoverButton(els, options), <br>
+ * c. app.popoverButton(els, options) <br>
  * 
  * @author Mars Hung <tfaredxj@gmail.com>
- * @version 1.0.0
  * 
- * @depandance bootstrap::popover
+ * @see <a href="https://github.com/marshung24/js-lib">marshung24/js-lib</a>
  * 
- * @param string
- *          el target object/class
- * @param function
- *          callback callback function
+ * @depandance jQuery, bootstrap::popover
+ * 
+ * @version 0.1.1
+ * 
+ * @example 1. <br>
+ *          app.popoverButton($('div.factor-block div.btn.rule')); <br>
+ *          app.popoverButton('div.factor-block div.btn.rule'); <br>
+ *          namespace.popoverButton('div.factor-block div.btn.rule'); <br>
+ *          $.marshung.popoverButton('div.factor-block div.btn.rule'); <br>
+ * 
+ * @example 2. <br>
+ *          var els = $('div.factor-block div.btn.rule'); <br>
+ *          var options = { schema: [ { value : 'yes1', text : '是2', style : 'btn-primary' }, {
+ *          value : 'no2', text : '否2', style : 'btn-danger' } ] }; <br>
+ *          app.popoverButton(els, options);
+ * 
+ * @param string|object
+ *          els Selector or jQueryObject
  * @param object
  *          options options
- * @param string
- *          uniqTag Unique tag, the same tag popover will not show on the same time
  * @returns
  */
-(function(window, document, $, undefined) {
-  // Namespace
-  $.marshung = typeof ($.marshung) == 'object' ? $.marshung : {};
-  window['namespace'] = typeof (window['namespace']) == 'object' ? $.marshung : {};
-  window['app'] = typeof (window['app']) == 'object' ? $.marshung : {};
+(function(window, $, undefined) {
+  "use strict";
+
+  var document = window.document;
+
+  // Class Name
+  var name = 'popoverButton';
+
+  // Version
+  var version = '0.1.1';
+
+  // Default options
+  var defaults = {
+          title : '',
+          placement : 'top',
+          // If schema not exists, use the content data.
+          content : '',
+          // If there is a schema, construct the content from the schema
+          schema : [],
+          // Callback called at: all, $specificButtonValue
+          callbackOn : 'all',
+          // Callback function
+          callback : function(ans, data) {
+            console.log(ans);
+            console.log(data);
+          },
+          // Show popover after initialized
+          showAfterInit : false,
+          // Unique tag, the same tag popover will not show on the same time
+          uniqTag : 'uniqTag4pop'
+  };
+
+  // Fixed Options - Cannot modify
+  var fixedOptions = {
+          toggle : 'popover',
+          container : 'body',
+          trigger : 'click',
+          html : true,
+  };
+
+  /**
+   * ========== Object Build ==========
+   */
+
+  // Define a local copy of Object
+  var obj = function(els, options) {
+    return new obj.fn.init(els, options);
+  };
+
+  obj.fn = obj.prototype = {
+          // The current version
+          version : version,
+
+          // Object Name
+          name : name,
+
+          // Default options
+          defaults : defaults,
+
+          // Fixed options
+          fixedOptions : fixedOptions,
+
+          // List of shown object - for close
+          popShownList : {},
+  };
 
   // Object
-  var popoverButton = function() {
+  obj.fn.init = function(els, options) {
     /**
      * =============== Object Argument Setting ===============
      */
@@ -47,23 +115,8 @@
     var argu = {
             'randCode' : '',
             'fixedCode' : '',
-            '$el' : '',
-            'callback' : '',
+            '$els' : '',
             'options' : '',
-            'uniqTag' : '',
-    };
-
-    // Default options
-    var defaults = {
-            title : '',
-            toggle : 'popover',
-            container : 'body',
-            placement : 'top',
-            trigger : 'click',
-            html : true,
-            content : '',
-            // callback called at: all, $specificButtonValue
-            callbackOn : 'all'
     };
 
     /**
@@ -71,175 +124,215 @@
      */
 
     /**
+     * Constructor
+     */
+    var _construct = function(els, options) {
+      // Initialize
+      var res = _initialize(els, options);
+
+      if (res) {
+        // Event Binding
+        _evenBind();
+      }
+    };
+
+    /**
+     * Destructor
+     */
+    var _destruct = function() {
+
+    };
+
+    /**
      * Initialize
      */
-    self.init = function(el, callback, options, uniqTag) {
-      var randCode, fixedCode, $el = $(el);
+    var _initialize = function(els, options) {
+      var randCode, fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n', $els = $(els);
 
       // Check - if inited, return
-      if ($el.data('fixedCode') && $el.data($el.data('fixedCode'))) {
-        return true;
+      if ($els.data('argu_' + fixedCode) && $els.data('options_' + fixedCode)) {
+        console.log('Already Initialized !');
+        return false;
       }
 
       // Argument
       argu.randCode = randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
-      argu.fixedCode = fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n';
-      argu.$el = $el;
-      argu.callback = callback = typeof (callback) == 'function' ? callback : function() {
-        console.log($(this));
-      };
-      argu.options = options = options || {};
-      argu.uniqTag = uniqTag = uniqTag || 'uniqTag4pop';
-
+      argu.fixedCode = fixedCode;
+      argu.$els = $els;
       // Merge Options
-      options = $.extend(defaults, options);
+      options = options || {};
+      argu.options = options = $.extend(self.defaults, options, self.fixedOptions);
 
-      options['content'] = "<input type='button' class='btn btn-primary margin-right-5 btn-xl answer_" + randCode
-              + "' style='width: auto;' data-answer='yes' value='" + lang.v114 + "'>" + "<input type='button' class='btn btn-danger btn-xl answer_"
-              + randCode + "' style='width: auto;' data-answer='no' value='" + lang.v115 + "'>"
+      options.callback = typeof (options.callback) == 'function' ? options.callback : function(ans, data) {
+        console.log(ans);
+        console.log(data);
+      };
 
-      // Record Random Code
-      $el.data('randCode', randCode);
-      // Record Fixed Code
-      $el.data('fixedCode', fixedCode);
-      // Record init status
-      $el.data(fixedCode, true);
+      // Button Builder - schema exists and have data
+      if ($.isArray(options.schema) && options.schema.length > 0) {
+        options.content = function() {
+          return self.buttonBuilder(options.schema, randCode);
+        };
+      }
+
+      // Record All Argument
+      $els.data('argu_' + fixedCode, argu);
       // Record all parameters
-      $el.data('options', options);
+      $els.data('options_' + fixedCode, options);
       // Record unique Tag
-      $el.data('uniqTag', uniqTag);
+      $els.data('uniqTag_' + fixedCode, options.uniqTag);
+      // Record fixedCode
+      $els.data('fixedCode', fixedCode);
       // Add unique tag class
-      $el.addClass(uniqTag);
+      $els.addClass(options.uniqTag);
 
       // Initialize
-      $el.popover(options);
-      // Show when inited
-      $el.popover('show');
+      $els.popover(options);
+      // Show after inited
+      if (options.showAfterInit) {
+        $els.last().popover('show');
+      }
 
-      // Event Binding
-      _evenBind();
+      return true;
     };
 
     /**
      * Event Binding
      */
     var _evenBind = function() {
-      var $el = argu.$el;
+      var $els = argu.$els;
 
-      // Button Event Binding - callback - Bind after each display(Because hide is cut off)
-      $el.on('shown.bs.popover', _popoverShown);
-      $('body').on('click', function() {
-        _popoverShownSchedule(null);
-      });
+      if (typeof ($els) == 'object') {
+        // Event - Popover shown
+        $els.on('shown.bs.popover', function() {
+          var $el = $(this);
+          self.popoverShown.call($el, argu);
+        });
+
+        // Event - Popover shown doing on schedule
+        $('body').on('click', function() {
+          self.popoverDoClose(null);
+        });
+      }
     };
 
     /**
-     * =============== Behavior Function ===============
+     * =============== Run Constructor ===============
      */
-
-    /**
-     * =============== Public Function ===============
-     */
-
-    /**
-     * =============== Event Function ===============
-     */
-
-    /**
-     * Event - Popover shown
-     */
-    var _popoverShown = function() {
-      var $e = $(this);
-      var $el = argu.$el;
-      var randCode = argu.randCode;
-      var callback = argu.callback;
-
-      setTimeout(function() {
-        _popoverShownSchedule($e);
-      }, 10);
-
-      // bind callback
-      $('div.popover-content').find('.answer_' + randCode).each(function(i, e) {
-        var $each = $(this);
-        if ($each.data('isSetClick')) {
-          return true;
-        }
-
-        $each.data('isSetClick', true);
-
-        $each.on('click', function() {
-          var isYes = $e.data('answer') == 'yes';
-          var data = $el.data('confirm');
-          var options = $el.data('options');
-
-          // run callback - by callbackOn
-          if (options['callbackOn'] == 'all') {
-            callback.call($e, isYes, data);
-          } else if (options['callbackOn'] == 'yes' && isYes) {
-            callback.call($e, isYes, data);
-          } else if (options['callbackOn'] == 'no' && !isYes) {
-            callback.call($e, isYes, data);
-          }
-
-          // Close popover
-          $el.popover('hide');
-        });
-      });
-    }
-
-    /**
-     * Event - Popover shown doing on schedule
-     */
-    var _popoverShownSchedule = function($shown) {
-      if ($shown == null) {
-        $.each(self.popShownList, function(i, e) {
-          e.popover('hide');
-        });
-        self.popShownList = {};
-      } else {
-        var uniqTag = $shown.data('uniqTag');
-
-        if (self.popShownList[uniqTag] != null && !self.popShownList[uniqTag].is($shown)) {
-          self.popShownList[uniqTag].popover('hide');
-        }
-
-        self.popShownList[uniqTag] = $shown;
-      }
-    }
-
-    /**
-     * =============== Private Function ===============
-     */
-
-    // // Event - Turn off non-target popover
-    // if (window[fixedCode] == null) {
-    // // Flag
-    // window[fixedCode] = fixedCode;
-    //
-    // // Target popover check
-    // $('body').on('click', function(e) {
-    // $('.' + uniqTag).each(function() {
-    // var $e = $(this);
-    //
-    // // hide any open popovers when the anywhere else in the body is clicked
-    // if (!$e.is(e.target) && $e.has(e.target).length === 0 && $('.popover').has(e.target).length
-    // === 0) {
-    // $e.popover('hide');
-    // }
-    // });
-    // });
-    // }
+    _construct(els, options);
   }
 
   /**
-   * Static Argument & Function
+   * Event - Popover shown
+   * 
+   * Button Event Binding after each display(Because hide is cut off)
    */
+  obj.fn.popoverShown = function(argu) {
+    var $el = $(this);
+    var randCode = argu.randCode;
+    var fixedCode = argu.fixedCode;
 
-  // List of shown object - for close
-  popoverButton.prototype.popShownList = {};
+    setTimeout(function() {
+      obj.popoverDoClose($el);
+    }, 10);
+
+    // bind callback
+    $('div.popover-content').find('.btn-anchor-' + randCode).each(function(i, e) {
+      var $btn = $(this);
+      if ($btn.data('isSetClick_' + fixedCode)) {
+        return true;
+      }
+
+      $btn.data('isSetClick_' + fixedCode, true);
+
+      $btn.on('click', function() {
+        var btnValue = $btn.data('value');
+        var data = $el.data('parameter');
+        var options = $el.data('options_' + fixedCode);
+
+        // run callback - by callbackOn
+        if (options.callbackOn == 'all') {
+          options.callback.call($btn, btnValue, data);
+        } else if (options.callbackOn == btnValue) {
+          options.callback.call($btn, btnValue, data);
+        }
+
+        // Close popover
+        $el.popover('hide');
+      });
+    });
+  }
 
   /**
-   * Object for namespace alias
+   * Event - Popover shown doing on schedule
+   * 
+   * @param $shownObj
+   *          Popover event owner
    */
-  $.marshung.popoverButton = window['namespace'].popoverButton = window['app'].popoverButton = new popoverButton();
-}(window, document, $));
+  obj.fn.popoverDoClose = function($shownObj) {
+    if ($shownObj == null) {
+      // Close All popover
+      $.each(obj.popShownList, function(i, e) {
+        e.popover('hide');
+      });
+      obj.popShownList = {};
+    } else {
+      // Close the same uniqTag popover
+      var fixedCode = $shownObj.data('fixedCode');
+      var uniqTag = $shownObj.data('uniqTag_' + fixedCode);
+
+      if (obj.popShownList[uniqTag] != null && !obj.popShownList[uniqTag].is($shownObj)) {
+        obj.popShownList[uniqTag].popover('hide');
+      }
+
+      obj.popShownList[uniqTag] = $shownObj;
+    }
+  }
+
+  /**
+   * Button Builder
+   * 
+   * Build button from schema
+   * 
+   * Data structure: <br>
+   * schema = [ {value:'',text:'',style:''}, {value:'',text:'',style:''} ];
+   * 
+   * @param object
+   *          schema
+   * @param string
+   *          randCode
+   * @return
+   */
+  obj.fn.buttonBuilder = function(schema, randCode) {
+    var len = schema.length, $opt = $('<div></div>'), $btn;
+
+    try {
+      $.each(schema, function(i, data) {
+        var marginLeft = (i + 1) == len ? '' : 'margin-right-5';
+        $btn = $(
+                '<input type="button" class="' + marginLeft + ' ' + data.style + ' btn btn-anchor-' + randCode
+                        + '" style="width: auto;" data-value="' + data.value + '" value="' + data.text + '">').appendTo($opt);
+      });
+    } catch (e) {
+
+    }
+
+    return $opt;
+  }
+
+  // Give the init function the Object prototype for later instantiation
+  obj.fn.init.prototype = obj.prototype;
+
+  // Alias prototype function
+  $.extend(obj, obj.fn);
+
+  // Namespace
+  $.marshung = typeof ($.marshung) == 'object' ? $.marshung : {};
+  window['namespace'] = typeof (window['namespace']) == 'object' ? window['namespace'] : {};
+  window['app'] = typeof (window['app']) == 'object' ? window['app'] : {};
+
+  /**
+   * Object for Namespace Alias
+   */
+  $.marshung.popoverButton = window['namespace'].popoverButton = window['app'].popoverButton = obj;
+}(window, $));
