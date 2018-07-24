@@ -161,7 +161,7 @@
       argu.$els = $els;
       // Merge Options
       options = options || {};
-      argu.options = options = $.extend(self.defaults, options, self.fixedOptions);
+      argu.options = options = $.extend({}, self.defaults, options, self.fixedOptions);
 
       options.callback = typeof (options.callback) == 'function' ? options.callback : function(ans, data) {
         console.log(ans);
