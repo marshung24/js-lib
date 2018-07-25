@@ -61,14 +61,17 @@
           // Callback called at: all, $specificButtonValue
           callbackOn : 'all',
           // Callback function
-          callback : function(ans, data) {
-            console.log(ans);
+          callback : function(value, data, parameter) {
+            console.log(this);
+            console.log(value);
             console.log(data);
+            console.log(parameter);
           },
           // Show popover after initialized
           showAfterInit : false,
           // Unique tag, the same tag popover will not show on the same time
-          uniqTag : 'uniqTag4pop'
+          uniqTag : 'uniqTag4pop',
+          maxWidth : '90%'
   };
 
   // Fixed Options - Cannot modify
@@ -163,9 +166,11 @@
       options = options || {};
       argu.options = options = $.extend({}, self.defaults, options, self.fixedOptions);
 
-      options.callback = typeof (options.callback) == 'function' ? options.callback : function(ans, data) {
-        console.log(ans);
+      options.callback = typeof (options.callback) == 'function' ? options.callback : function(value, data, parameter) {
+        console.log(this);
+        console.log(value);
         console.log(data);
+        console.log(parameter);
       };
 
       // Button Builder - schema exists and have data
@@ -188,6 +193,10 @@
 
       // Initialize
       $els.popover(options);
+
+      // Change Max Width
+      $els.data("bs.popover").tip().css("maxWidth", options.maxWidth);
+
       // Show after inited
       if (options.showAfterInit) {
         $els.last().popover('show');
@@ -247,14 +256,19 @@
 
       $btn.on('click', function() {
         var btnValue = $btn.data('value');
-        var data = $el.data('parameter');
+        var data = $btn.data('data');
+        var parameter = argu;
         var options = $el.data('options_' + fixedCode);
 
         // run callback - by callbackOn
         if (options.callbackOn == 'all') {
-          options.callback.call($btn, btnValue, data);
+          setTimeout(function() {
+            options.callback.call($btn, btnValue, data, parameter);
+          }, 10);
         } else if (options.callbackOn == btnValue) {
-          options.callback.call($btn, btnValue, data);
+          setTimeout(function() {
+            options.callback.call($btn, btnValue, data, parameter);
+          }, 10);
         }
 
         // Close popover
@@ -312,6 +326,7 @@
         $btn = $(
                 '<input type="button" class="' + marginLeft + ' ' + data.style + ' btn btn-anchor-' + randCode
                         + '" style="width: auto;" data-value="' + data.value + '" value="' + data.text + '">').appendTo($opt);
+        $btn.data('data', data);
       });
     } catch (e) {
 
