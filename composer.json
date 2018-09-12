@@ -1,0 +1,17 @@
+{
+    "name": "marshung/js-lib",
+    "description": "Javascript extension library",
+    "homepage": "https://github.com/marshung24/js-lib",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mars Hung",
+            "email": "tfaredxj@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "marshung\\js-lib\\": "src" }
+    },
+    "minimum-stability": "stable"
+}
