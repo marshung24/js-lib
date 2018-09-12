@@ -52,34 +52,34 @@
 
   // Default options
   var defaults = {
-          title : '',
-          placement : 'top',
-          // If schema not exists, use the content data.
-          content : '',
-          // If there is a schema, construct the content from the schema
-          schema : [],
-          // Callback called at: all, $specificButtonValue
-          callbackOn : 'all',
-          // Callback function
-          callback : function(value, data, parameter) {
-            console.log(this);
-            console.log(value);
-            console.log(data);
-            console.log(parameter);
-          },
-          // Show popover after initialized
-          showAfterInit : false,
-          // Unique tag, the same tag popover will not show on the same time
-          uniqTag : 'uniqTag4pop',
-          maxWidth : '90%'
+    title : '',
+    placement : 'top',
+    // If schema not exists, use the content data.
+    content : '',
+    // If there is a schema, construct the content from the schema
+    schema : [],
+    // Callback called at: all, $specificButtonValue
+    callbackOn : 'all',
+    // Callback function
+    callback : function(value, data, parameter) {
+      console.log(this);
+      console.log(value);
+      console.log(data);
+      console.log(parameter);
+    },
+    // Show popover after initialized
+    showAfterInit : false,
+    // Unique tag, the same tag popover will not show on the same time
+    uniqTag : 'uniqTag4pop',
+    maxWidth : '90%'
   };
 
   // Fixed Options - Cannot modify
   var fixedOptions = {
-          toggle : 'popover',
-          container : 'body',
-          trigger : 'click',
-          html : true,
+    toggle : 'popover',
+    container : 'body',
+    trigger : 'click',
+    html : true,
   };
 
   /**
@@ -92,20 +92,20 @@
   };
 
   obj.fn = obj.prototype = {
-          // The current version
-          version : version,
+    // The current version
+    version : version,
 
-          // Object Name
-          name : name,
+    // Object Name
+    name : name,
 
-          // Default options
-          defaults : defaults,
+    // Default options
+    defaults : defaults,
 
-          // Fixed options
-          fixedOptions : fixedOptions,
+    // Fixed options
+    fixedOptions : fixedOptions,
 
-          // List of shown object - for close
-          popShownList : {},
+    // List of shown object - for close
+    popShownList : {},
   };
 
   // Object
@@ -116,10 +116,10 @@
     "use strict";
     var self = this;
     var argu = {
-            'randCode' : '',
-            'fixedCode' : '',
-            '$els' : '',
-            'options' : '',
+      'randCode' : '',
+      'fixedCode' : '',
+      '$els' : '',
+      'options' : '',
     };
 
     /**
@@ -273,6 +273,9 @@
 
         // Close popover
         $el.popover('hide');
+        
+        // Bug Solution: Show need twice click when use popover('hide') to close
+        obj.bug4TwiceClick($el);
       });
     });
   }
@@ -286,8 +289,10 @@
   obj.fn.popoverDoClose = function($shownObj) {
     if ($shownObj == null) {
       // Close All popover
-      $.each(obj.popShownList, function(i, e) {
-        e.popover('hide');
+      $.each(obj.popShownList, function(i, $el) {
+        $el.popover('hide');
+        // Bug Solution: Show need twice click when use popover('hide') to close
+        obj.bug4TwiceClick($el);
       });
       obj.popShownList = {};
     } else {
@@ -295,8 +300,11 @@
       var fixedCode = $shownObj.data('fixedCode');
       var uniqTag = $shownObj.data('uniqTag_' + fixedCode);
 
+      // Close target when not self and had the same uniqTag
       if (obj.popShownList[uniqTag] != null && !obj.popShownList[uniqTag].is($shownObj)) {
         obj.popShownList[uniqTag].popover('hide');
+        // Bug Solution: Show need twice click when use popover('hide') to close
+        obj.bug4TwiceClick(obj.popShownList[uniqTag]);
       }
 
       obj.popShownList[uniqTag] = $shownObj;
@@ -333,6 +341,19 @@
     }
 
     return $opt;
+  }
+  
+  /**
+   * Bug Solution: Show need twice click when use popover('hide') to close
+   */
+  obj.fn.bug4TwiceClick = function ($el) {
+    if ($el.data("bs.popover").inState) {
+      // Bootstrap 3
+      $el.data("bs.popover").inState.click = false;
+    } else if ($el.data("bs.popover")._activeTrigger) {
+      // Bootstrap 4
+      $el.data("bs.popover")._activeTrigger.click = false;
+    }
   }
 
   // Give the init function the Object prototype for later instantiation
