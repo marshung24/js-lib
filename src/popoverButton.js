@@ -48,7 +48,7 @@
   var name = 'popoverButton';
 
   // Version
-  var version = '0.1.1';
+  var version = '0.1.2';
 
   // Default options
   var defaults = {
@@ -71,7 +71,8 @@
     showAfterInit : false,
     // Unique tag, the same tag popover will not show on the same time
     uniqTag : 'uniqTag4pop',
-    maxWidth : '90%'
+    maxWidth : '90%',
+    randCode : ''
   };
 
   // Fixed Options - Cannot modify
@@ -121,6 +122,10 @@
       '$els' : '',
       'options' : '',
     };
+    
+    // Deferred && promise
+    self.defer = $.Deferred();
+    self.defer.promise(self);
 
     /**
      * =============== Object Function ===============
@@ -152,26 +157,29 @@
     var _initialize = function(els, options) {
       var randCode, fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n', $els = $(els);
 
-      // Check - if inited, return
-      if ($els.data('argu_' + fixedCode) && $els.data('options_' + fixedCode)) {
-        console.log('Already Initialized !');
-        return false;
-      }
+      
+//      // Check - if inited, return
+//      if ($els.data('argu_' + fixedCode) && $els.data('options_' + fixedCode)) {
+//        console.log('Already Initialized !');
+//        return false;
+//      }
 
-      // Argument
-      argu.randCode = randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
-      argu.fixedCode = fixedCode;
-      argu.$els = $els;
       // Merge Options
       options = options || {};
-      argu.options = options = $.extend({}, self.defaults, options, self.fixedOptions);
+      options = $.extend({}, self.defaults, options, self.fixedOptions);
+      
+      // Argument
+      if (options.randCode) {
+        argu.randCode =  randCode = options.randCode;
+      } else {
+        argu.randCode =  randCode = options.randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
+      }
+      argu.fixedCode = fixedCode;
+      argu.$els = $els;
+      argu.options = options;
+      argu.self = self;
 
-      options.callback = typeof (options.callback) == 'function' ? options.callback : function(value, data, parameter) {
-        console.log(this);
-        console.log(value);
-        console.log(data);
-        console.log(parameter);
-      };
+      options.callback = typeof (options.callback) == 'function' ? options.callback : function(value, data, parameter) {};
 
       // Button Builder - schema exists and have data
       if ($.isArray(options.schema) && options.schema.length > 0) {
@@ -197,6 +205,12 @@
       // Change Max Width
       $els.data("bs.popover").tip().css("maxWidth", options.maxWidth);
 
+      // preventDefault && stopPropagation
+      $els.on('click', function(e){
+        //e.preventDefault();
+        e.stopPropagation();
+      })
+      
       // Show after inited
       if (options.showAfterInit) {
         $els.last().popover('show');
@@ -209,18 +223,24 @@
      * Event Binding
      */
     var _evenBind = function() {
-      var $els = argu.$els;
+      var $els = argu.$els, uniqTag = argu.options.uniqTag;
 
       if (typeof ($els) == 'object') {
         // Event - Popover shown
+        $els.off('shown.bs.popover');
         $els.on('shown.bs.popover', function() {
           var $el = $(this);
           self.popoverShown.call($el, argu);
         });
 
         // Event - Popover shown doing on schedule
-        $('body').on('click', function() {
-          self.popoverDoClose(null);
+        $('body').off('click.popoverButton');
+        $('body').on('click.popoverButton', function(e) {
+          var $e = $(e.target), $ruleEl = $e.closest('.' + uniqTag);
+          var $pBody = $('div.popover-content').parent();
+          if (! $els.is($ruleEl) && ! $pBody.has($e).length) {
+            self.popoverDoClose(null);
+          }
         });
       }
     };
@@ -240,6 +260,7 @@
     var $el = $(this);
     var randCode = argu.randCode;
     var fixedCode = argu.fixedCode;
+    var defer = argu.self.defer;
 
     setTimeout(function() {
       obj.popoverDoClose($el);
@@ -264,10 +285,14 @@
         if (options.callbackOn == 'all') {
           setTimeout(function() {
             options.callback.call($btn, btnValue, data, parameter);
+            // Resolve the deferred
+            defer.resolve($btn, btnValue, data, parameter);
           }, 10);
         } else if (options.callbackOn == btnValue) {
           setTimeout(function() {
             options.callback.call($btn, btnValue, data, parameter);
+            // Resolve the deferred
+            defer.resolve($btn, btnValue, data, parameter);
           }, 10);
         }
 
@@ -299,7 +324,7 @@
       // Close the same uniqTag popover
       var fixedCode = $shownObj.data('fixedCode');
       var uniqTag = $shownObj.data('uniqTag_' + fixedCode);
-
+      
       // Close target when not self and had the same uniqTag
       if (obj.popShownList[uniqTag] != null && !obj.popShownList[uniqTag].is($shownObj)) {
         obj.popShownList[uniqTag].popover('hide');
@@ -347,10 +372,10 @@
    * Bug Solution: Show need twice click when use popover('hide') to close
    */
   obj.fn.bug4TwiceClick = function ($el) {
-    if ($el.data("bs.popover").inState) {
+    if ($el.data("bs.popover") && $el.data("bs.popover").inState) {
       // Bootstrap 3
       $el.data("bs.popover").inState.click = false;
-    } else if ($el.data("bs.popover")._activeTrigger) {
+    } else if ($el.data("bs.popover") && $el.data("bs.popover")._activeTrigger) {
       // Bootstrap 4
       $el.data("bs.popover")._activeTrigger.click = false;
     }
