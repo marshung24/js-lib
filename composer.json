@@ -2,7 +2,7 @@
     "name": "marshung/js-lib",
     "description": "Javascript extension library",
     "homepage": "https://github.com/marshung24/js-lib",
-    "type": "library",
+    "type": "js-lib",
     "license": "MIT",
     "authors": [
         {
@@ -13,5 +13,8 @@
     "autoload": {
         "psr-4": { "marshung\\js-lib\\": "src" }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "require": {
+        "oomphinc/composer-installers-extender": "~1.1"
+    }
 }
