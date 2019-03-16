@@ -25,6 +25,7 @@ include_once '../vendor/autoload.php';
 </head>
 
 <body>
+  <button class="btn btn-primary delete">刪除確認1</button>
   <br>
   <br>
   <br>
@@ -34,8 +35,11 @@ include_once '../vendor/autoload.php';
   <br>
   <br>
 
-  <div class="form-group row form-horizontal col-sm-12">
-    <button class="btn btn-primary confirm">確認</button>
+  <div class="form-group row form-horizontal col-sm-1">
+    <button class="btn btn-primary confirm1">確認1</button>
+  </div>
+  <div class="form-group row form-horizontal col-sm-1">
+    <button class="btn btn-primary confirm2">確認2</button>
   </div>
 
 </body>
@@ -48,13 +52,20 @@ include_once '../vendor/autoload.php';
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
   integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
+<script src="../src/captureStackTrace.js"></script>
 <script src="../src/popoverButton.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function(){
-  var options = { schema: [ { value : 'yes1', text : '是2', style : 'btn-primary' }, {value : 'no2', text : '否2', style : 'btn-danger' } ] };
-  app.popoverButton($('button.confirm'), options);
+  var options1 = { schema: [ { value : 'yes1', text : '是1', style : 'btn-primary' }, {value : 'no1', text : '否1', style : 'btn-danger' } ], callback: function () {console.log('111')} };
+  app.popoverButton($('button.confirm1'), options1);
+  var options2 = { schema: [ { value : 'yes2', text : '是2', style : 'btn-primary' }, {value : 'no2', text : '否2', style : 'btn-danger' } ], callback: function () {console.log('222')} };
+  app.popoverButton($('button.confirm2'), options2);
 
+
+  $('button.delete').on('click', function () {
+    $('button.confirm1').remove();
+  });
 });
 
 </script>

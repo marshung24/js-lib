@@ -48,7 +48,7 @@
   var name = 'popoverButton';
 
   // Version
-  var version = '0.2.0';
+  var version = '0.2.2';
 
   // Fixed identification code
   var fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n';
@@ -214,7 +214,7 @@
       $els.popover(options);
 
       // Change Max Width
-      $els.data("bs.popover").tip().css("maxWidth", options.maxWidth);
+      $els.data('bs.popover').tip().css('maxWidth', options.maxWidth);
       
       // Show after inited
       if (options.showAfterInit) {
@@ -265,7 +265,7 @@
     $els.off('hidden.bs.popover');
     
     setTimeout(function(){
-      if ($els.data("bs.popover")) {
+      if ($els.data('bs.popover')) {
         
         $els.removeData(['argu_' + fixedCode, 'options_' + fixedCode, 'uniqTag_' + fixedCode]);
         $els.removeClass(uniqTag);
@@ -283,6 +283,7 @@
    */
   obj.fn.popoverShown = function(argu) {
     var $el = $(this);
+    var options = $el.data('options_' + fixedCode);
     var randCode = argu.randCode;
     var defer = argu.self.defer;
 
@@ -293,6 +294,9 @@
     // bind callback
     $('div.popover-content').find('.btn-anchor-' + randCode).each(function(i, e) {
       var $btn = $(this);
+      var btnValue = $btn.data('value');
+      var data = $btn.data('data');
+
       if ($btn.data('isSetClick_' + fixedCode)) {
         return true;
       }
@@ -300,31 +304,23 @@
       $btn.data('isSetClick_' + fixedCode, true);
 
       $btn.on('click', function() {
-        var btnValue = $btn.data('value');
-        var data = $btn.data('data');
-        var parameter = argu;
-        var options = $el.data('options_' + fixedCode);
-
         // run callback - by callbackOn
         if (options.callbackOn == 'all') {
           setTimeout(function() {
-            options.callback.call($btn, btnValue, data, parameter);
+            options.callback.call($btn, btnValue, data, argu);
             // Resolve the deferred
-            defer.resolve($btn, btnValue, data, parameter);
+            defer.resolve($btn, btnValue, data, argu);
           }, 10);
         } else if (options.callbackOn == btnValue) {
           setTimeout(function() {
-            options.callback.call($btn, btnValue, data, parameter);
+            options.callback.call($btn, btnValue, data, argu);
             // Resolve the deferred
-            defer.resolve($btn, btnValue, data, parameter);
+            defer.resolve($btn, btnValue, data, argu);
           }, 10);
         }
 
         // Close popover
-        $el.popover('hide');
-        
-        // Bug Solution: Show need twice click when use popover('hide') to close
-        obj.bug4TwiceClick($el);
+        obj.popoverDoClose(null);
       });
     });
   }
@@ -339,23 +335,35 @@
     if ($shownObj == null) {
       // Close All popover
       $.each(obj.popShownList, function(i, $el) {
-        $el.popover('hide');
+        // popover hide,remove(When $el['el'] removed by other way)
+        $el['el'].popover('hide');
+        setTimeout(function() {
+          $el['tip'].remove();
+        }, 100);
         // Bug Solution: Show need twice click when use popover('hide') to close
-        obj.bug4TwiceClick($el);
+        obj.bug4TwiceClick($el['el']);
       });
       obj.popShownList = {};
     } else {
       // Close the same uniqTag popover
       var uniqTag = $shownObj.data('uniqTag_' + fixedCode);
-      
-      // Close target when not self and had the same uniqTag
-      if (obj.popShownList[uniqTag] != null && !obj.popShownList[uniqTag].is($shownObj)) {
-        obj.popShownList[uniqTag].popover('hide');
-        // Bug Solution: Show need twice click when use popover('hide') to close
-        obj.bug4TwiceClick(obj.popShownList[uniqTag]);
-      }
 
-      obj.popShownList[uniqTag] = $shownObj;
+      // Close target when not self and had the same uniqTag
+      if (obj.popShownList[uniqTag] != null && obj.popShownList[uniqTag]['el'] != null && !obj.popShownList[uniqTag]['el'].is($shownObj)) {
+        var tmpEl = obj.popShownList[uniqTag];
+        // popover hide,remove(When $el['el'] removed by other way)
+        tmpEl['el'].popover('hide');
+        setTimeout(function() {
+          tmpEl['tip'].remove();
+        }, 100);
+        // Bug Solution: Show need twice click when use popover('hide') to close
+        obj.bug4TwiceClick(tmpEl['el']);
+      }
+      // Save el and tip
+      obj.popShownList[uniqTag] = {
+        'el' : $shownObj,
+        'tip' : $shownObj.data('bs.popover').$tip
+      }
     }
   }
 
@@ -394,12 +402,12 @@
    * Bug Solution: Show need twice click when use popover('hide') to close
    */
   obj.fn.bug4TwiceClick = function ($el) {
-    if ($el.data("bs.popover") && $el.data("bs.popover").inState) {
+    if ($el.data('bs.popover') && $el.data('bs.popover').inState) {
       // Bootstrap 3
-      $el.data("bs.popover").inState.click = false;
-    } else if ($el.data("bs.popover") && $el.data("bs.popover")._activeTrigger) {
+      $el.data('bs.popover').inState.click = false;
+    } else if ($el.data('bs.popover') && $el.data('bs.popover')._activeTrigger) {
       // Bootstrap 4
-      $el.data("bs.popover")._activeTrigger.click = false;
+      $el.data('bs.popover')._activeTrigger.click = false;
     }
   }
 
