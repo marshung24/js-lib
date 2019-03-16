@@ -1,17 +1,11 @@
 /**
  * Template
  * 
- * 
  * @author Mars Hung <tfaredxj@gmail.com>
- * 
  * @see <a href="https://github.com/marshung24/js-lib">marshung24/js-lib</a>
- * 
  * @depandance jQuery
- * 
  * @version
- * 
  * @example
- * 
  * @param
  * @returns
  */
@@ -26,13 +20,25 @@
   // Version
   var version = '{version}';
 
+  // Fixed identification code
+  var fixedCode = 'init_{fixedCode}';
+
   // jqXHR pool
   window.jqXHRs = typeof (window.jqXHRs) != 'undefined' ? window.jqXHRs : {};
   window.jqXHRs[name] = typeof (window.jqXHRs[name]) != 'undefined' ? window.jqXHRs[name] : {};
   var jqXHRs = window.jqXHRs[name];
 
   // Default options
-  var defaults = {};
+  var defaults = {
+    // Callback called at: all, $specificButtonValue
+    callbackOn : 'all',
+    // Callback function
+    callback : function(value, data, parameter) {
+    },
+    // Unique tag, the same tag popover will not show on the same time
+    uniqTag : 'uniqTag4' + name,
+    randCode : ''
+  };
 
   // Fixed Options - Cannot modify
   var fixedOptions = {};
@@ -43,40 +49,53 @@
 
   // Define a local copy of Object
   var obj = function(el, options) {
-    return new obj.fn.init(el, options);
+    var $el = $(el), argu = $el.data('argu_' + fixedCode);
+
+    // Check - If there is no target, return
+    if (!$el.length)
+      return false;
+
+    // Check - if inited, return instance ; if not inited, init it
+    return (argu && argu.self) ? argu.self : new obj.fn.init(el, options);
   };
 
   // Object Global Parameter
   obj.fn = obj.prototype = {
-          // Object Name
-          name : name,
+    // Object Name
+    name : name,
 
-          // The current version
-          version : version,
+    // The current version
+    version : version,
 
-          // The current version
-          jqXHRs : jqXHRs,
+    // The current version
+    jqXHRs : jqXHRs,
 
-          // Default options
-          defaults : defaults,
+    // Default options
+    defaults : defaults,
 
-          // Fixed options
-          fixedOptions : fixedOptions,
+    // Fixed options
+    fixedOptions : fixedOptions,
   };
 
   // Object Init
   obj.fn.init = function(el, options) {
     /**
-     * =============== Object Argument Setting ===============
+     * =============== Object Property Setting ===============
      */
-    "use strict";
     var self = this;
     var argu = {
-            'randCode' : '',
-            'fixedCode' : '',
-            '$el' : '',
-            'options' : '',
+      'randCode' : '',
+      'fixedCode' : fixedCode,
+      '$el' : '',
+      'options' : '',
+      'self' : self,
     };
+
+    // Deferred && promise
+    self.defer = $.Deferred();
+    self.defer.promise(self);
+
+    // self.publicProperty = 'public';
 
     /**
      * =============== Object Function ===============
@@ -109,23 +128,53 @@
     };
 
     /**
+     * Get Property
+     */
+    self.getProperty = function(property) {
+      if (eval('typeof ' + property) != "undefined") {
+        return eval(property);
+      }
+      return undefined;
+    }
+
+    /**
      * Parameter Initialize
      */
     var _paramIinit = function(el, options) {
-      var randCode, fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n', $el = $(el);
+      var randCode, $el = $(el);
 
-      // Check - if inited, return
-      if ($el.data('argu_' + fixedCode) && $el.data('options_' + fixedCode)) {
-        throw 'Already Initialized !';
-      }
-
-      // Argument
-      argu.randCode = randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
-      argu.fixedCode = fixedCode;
-      argu.$el = $el;
       // Merge Options
       options = options || {};
-      argu.options = options = $.extend({}, self.defaults, options, self.fixedOptions);
+      options = $.extend(true, {}, self.defaults, options, self.fixedOptions);
+
+      // Property
+      if (options.randCode) {
+        argu.randCode = randCode = options.randCode;
+      } else {
+        argu.randCode = randCode = options.randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
+      }
+      argu.$el = $el;
+      argu.options = options;
+      argu.self = self;
+
+      options.callback = typeof (options.callback) == 'function' ? options.callback : function(value, data, parameter) {
+      };
+
+      // Record All Property
+      $els.data('argu_' + fixedCode, argu);
+      // Record all parameters
+      $els.data('options_' + fixedCode, options);
+      // Record unique Tag
+      $els.data('uniqTag_' + fixedCode, options.uniqTag);
+      // Add unique tag class
+      $els.addClass(options.uniqTag);
+
+      // preventDefault && stopPropagation
+      $els.on('click.' + options.uniqTag, function(e) {
+        // e.preventDefault();
+        e.stopPropagation();
+      });
+
     };
 
     /**
@@ -147,22 +196,6 @@
 
       }
     };
-
-    /**
-     * Get Argu
-     */
-    self.getArgu = function(arguName) {
-      arguName = arguName || null;
-      var opt = null;
-
-      if (arguName != null) {
-        opt = argu[arguName] || null;
-      } else {
-        opt = argu;
-      }
-
-      return opt;
-    }
 
     /**
      * =============== Run Constructor ===============

@@ -5,7 +5,7 @@
  * 
  * note: <br>
  * 1. Please set the extra parameters for the callback on $el.data('parameter')<br>
- * 2. callback argument: callback($buttonValue, $extraData);<br>
+ * 2. Callback property: callback($buttonValue, $extraData);<br>
  * 3. Callback use case is defined in the parameter: options.callbackOn <br>
  * 4. Namespace support: $.marshung, namespace, app<br>
  * ex: <br>
@@ -48,8 +48,11 @@
   var name = 'popoverButton';
 
   // Version
-  var version = '0.1.2';
+  var version = '0.2.0';
 
+  // Fixed identification code
+  var fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n';
+  
   // Default options
   var defaults = {
     title : '',
@@ -61,12 +64,7 @@
     // Callback called at: all, $specificButtonValue
     callbackOn : 'all',
     // Callback function
-    callback : function(value, data, parameter) {
-      console.log(this);
-      console.log(value);
-      console.log(data);
-      console.log(parameter);
-    },
+    callback : function(value, data, parameter) {},
     // Show popover after initialized
     showAfterInit : false,
     // Unique tag, the same tag popover will not show on the same time
@@ -89,7 +87,14 @@
 
   // Define a local copy of Object
   var obj = function(els, options) {
-    return new obj.fn.init(els, options);
+    var $els = $(els), argu = $els.data('argu_' + fixedCode);
+
+    // Check - If there is no target, return
+    if (!$els.length)
+      return false;
+
+    // Check - if inited, return instance ; if not inited, init it
+    return (argu && argu.self) ? argu.self : new obj.fn.init(els, options);
   };
 
   obj.fn = obj.prototype = {
@@ -112,15 +117,15 @@
   // Object
   obj.fn.init = function(els, options) {
     /**
-     * =============== Object Argument Setting ===============
+     * =============== Object Property Setting ===============
      */
-    "use strict";
     var self = this;
     var argu = {
       'randCode' : '',
-      'fixedCode' : '',
+      'fixedCode' : fixedCode,
       '$els' : '',
       'options' : '',
+      'self' : self,
     };
     
     // Deferred && promise
@@ -152,29 +157,31 @@
     };
 
     /**
+     * Get Property
+     */
+    self.getProperty = function(property) {
+      if (eval('typeof ' + property) != "undefined") {
+        return eval(property);
+      }
+      return undefined;
+    }
+    
+    /**
      * Initialize
      */
     var _initialize = function(els, options) {
-      var randCode, fixedCode = 'popInit_Y29kZWJ5bWFycy5odW5n', $els = $(els);
-
-      
-//      // Check - if inited, return
-//      if ($els.data('argu_' + fixedCode) && $els.data('options_' + fixedCode)) {
-//        console.log('Already Initialized !');
-//        return false;
-//      }
+      var randCode, $els = $(els);
 
       // Merge Options
       options = options || {};
-      options = $.extend({}, self.defaults, options, self.fixedOptions);
+      options = $.extend(true, {}, self.defaults, options, self.fixedOptions);
       
-      // Argument
+      // Property
       if (options.randCode) {
         argu.randCode =  randCode = options.randCode;
       } else {
         argu.randCode =  randCode = options.randCode = String.prototype.concat(Date.now(), Math.random()).replace('.', '');
       }
-      argu.fixedCode = fixedCode;
       argu.$els = $els;
       argu.options = options;
       argu.self = self;
@@ -188,28 +195,26 @@
         };
       }
 
-      // Record All Argument
+      // Record All Property
       $els.data('argu_' + fixedCode, argu);
       // Record all parameters
       $els.data('options_' + fixedCode, options);
       // Record unique Tag
       $els.data('uniqTag_' + fixedCode, options.uniqTag);
-      // Record fixedCode
-      $els.data('fixedCode', fixedCode);
       // Add unique tag class
       $els.addClass(options.uniqTag);
+
+      // preventDefault && stopPropagation
+      $els.on('click.' + options.uniqTag, function(e){
+        //e.preventDefault();
+        e.stopPropagation();
+      });
 
       // Initialize
       $els.popover(options);
 
       // Change Max Width
       $els.data("bs.popover").tip().css("maxWidth", options.maxWidth);
-
-      // preventDefault && stopPropagation
-      $els.on('click', function(e){
-        //e.preventDefault();
-        e.stopPropagation();
-      })
       
       // Show after inited
       if (options.showAfterInit) {
@@ -252,6 +257,26 @@
   }
 
   /**
+   * Destroy popoverButton
+   */
+  obj.fn.destroy = function() {
+    var argu = this.getProperty('argu');
+    var $els = $(argu.$els), uniqTag = argu.options.uniqTag;;
+    $els.off('hidden.bs.popover');
+    
+    setTimeout(function(){
+      if ($els.data("bs.popover")) {
+        
+        $els.removeData(['argu_' + fixedCode, 'options_' + fixedCode, 'uniqTag_' + fixedCode]);
+        $els.removeClass(uniqTag);
+        $els.off('click.' + uniqTag);
+        
+        $els.popover('destroy');
+      }
+    }, 100);
+  }
+  
+  /**
    * Event - Popover shown
    * 
    * Button Event Binding after each display(Because hide is cut off)
@@ -259,7 +284,6 @@
   obj.fn.popoverShown = function(argu) {
     var $el = $(this);
     var randCode = argu.randCode;
-    var fixedCode = argu.fixedCode;
     var defer = argu.self.defer;
 
     setTimeout(function() {
@@ -322,7 +346,6 @@
       obj.popShownList = {};
     } else {
       // Close the same uniqTag popover
-      var fixedCode = $shownObj.data('fixedCode');
       var uniqTag = $shownObj.data('uniqTag_' + fixedCode);
       
       // Close target when not self and had the same uniqTag
@@ -355,10 +378,9 @@
 
     try {
       $.each(schema, function(i, data) {
-        var marginLeft = (i + 1) == len ? '' : 'margin-right-5';
-        $btn = $(
-                '<input type="button" class="' + marginLeft + ' ' + data.style + ' btn btn-anchor-' + randCode
-                        + '" style="width: auto;" data-value="' + data.value + '" value="' + data.text + '">').appendTo($opt);
+        var margin = (i == 0) ? '' : 'margin-left:5px;';
+        $btn = $('<input type="button" class="' + data.style + ' btn btn-anchor-' + randCode
+                + '" style="width:auto;' + margin + '" data-value="' + data.value + '" value="' + data.text + '">').appendTo($opt);
         $btn.data('data', data);
       });
     } catch (e) {
@@ -395,5 +417,5 @@
   /**
    * Object for Namespace Alias
    */
-  $.marshung.popoverButton = window['namespace'].popoverButton = window['app'].popoverButton = obj;
+  $.marshung[name] = window['namespace'][name] = window['app'][name] = obj;
 }(window, $));
