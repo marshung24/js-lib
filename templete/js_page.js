@@ -2,8 +2,6 @@
  * 說明：
  * <li>1. 頁面函式只會初始化一次
  * <li>2. 如果是多頁面組合時，可能被其他頁面呼叫，因此需使用namespane:Page，以方便外部呼叫或試調
- * 
- * 
  */
 
 // IIFE 立即執行函式
@@ -19,10 +17,9 @@
   });
 
   // Class Name
-  var obj, name = '{name}
-
+  var name = '{name}';
   // Version
-  var version = '{version}';';
+  var version = '{version}';
 
   // Default options
   var defaults = {};
@@ -39,16 +36,10 @@
   // Prototype arguments
   obj.fn = obj.prototype = {
           // Object Name
-          name : name,
+          _name : name,
 
           // Default options
-          defaults : defaults,
-
-          // Page URL
-          _pageUrls : {
-            'list' : '/controller_group_forder/controller',
-            'edit' : '/controller_group_forder/controller/edit',
-          },
+          _defaults : defaults,
 
           // AJAX URL
           _ajaxUrls : {
@@ -67,7 +58,7 @@
     var self = this;
     var _options = options || {};
     // Ajax Response - jqXHR(s)
-    var _ajaxResponse;
+    var _jqXHRs;
 
     /**
      * *************** 屬性設定 ***************
